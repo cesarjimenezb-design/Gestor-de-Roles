@@ -30,7 +30,12 @@
     }
     .topbar-left { display:flex; align-items:center; gap:12px; }
     .logo { display:flex; align-items:center; gap:6px; font-weight:bold; color:var(--rojo-teleton); font-size:18px; }
-    .logo-icon { width:26px; height:26px; border-radius:50%; border:2px solid var(--rojo-teleton); display:inline-flex; align-items:center; justify-content:center; font-size:16px; }
+    .logo-icon {
+      width:26px; height:26px; border-radius:50%;
+      border:2px solid var(--rojo-teleton);
+      display:inline-flex; align-items:center; justify-content:center;
+      font-size:16px;
+    }
     .page { padding: 18px 24px 30px; max-width:1200px; margin:0 auto; }
     .page-title { font-size:16px; font-weight:600; margin-bottom:4px; }
     .page-subtitle { font-size:13px; color:#777; margin-bottom:12px; }
@@ -91,7 +96,6 @@
     </div>
   </header>
 
-  <!-- Vista única: Gestor de Roles -->
   <main id="profileView" class="page">
     <div class="card">
       <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -100,7 +104,7 @@
           <div class="page-subtitle">Crear o eliminar perfiles a partir de roles</div>
         </div>
         <div>
-          <!-- Este botón aquí solo recarga la página en esta versión standalone -->
+          <!-- Botón Limpiar que vuelve a la página principal -->
           <button class="btn-secondary" id="btnVolverPerfil">← Limpiar</button>
         </div>
       </div>
@@ -146,7 +150,7 @@
 
   <script>
     /********************************************************************
-     * Catálogo de roles y perfiles de ejemplo (adaptado del original)
+     * Catálogo de roles (todos los códigos -> checkboxes)
      ********************************************************************/
     const rolesCatalogo = {
       "100": "Médico",
@@ -244,6 +248,9 @@
       "382": "Imprimir Evolución"
     };
 
+    /********************************************************************
+     * Perfiles base por ámbito (se sobreescriben con lo del storage)
+     ********************************************************************/
     const dataPerfiles = {
       "Educación":[
         { id:"educadora", nombre:"Educadora", roles:["102","105","308","320","367","378"] },
@@ -271,6 +278,29 @@
     };
 
     /********************************************************************
+     * Persistencia con localStorage (para compartir con Roles-y-perfiles)
+     ********************************************************************/
+    const STORAGE_KEY_PERFILES = "gestor_roles_perfiles";
+
+    function cargarPerfilesDesdeStorage() {
+      const json = localStorage.getItem(STORAGE_KEY_PERFILES);
+      if (!json) return;
+      try {
+        const obj = JSON.parse(json);
+        Object.keys(obj).forEach(amb => {
+          if (!dataPerfiles[amb]) dataPerfiles[amb] = [];
+          dataPerfiles[amb] = obj[amb];
+        });
+      } catch (e) {
+        console.error("Error al leer perfiles desde storage", e);
+      }
+    }
+
+    function guardarPerfilesEnStorage() {
+      localStorage.setItem(STORAGE_KEY_PERFILES, JSON.stringify(dataPerfiles));
+    }
+
+    /********************************************************************
      * DOM
      ********************************************************************/
     const btnVolverPerfil   = document.getElementById("btnVolverPerfil");
@@ -282,7 +312,7 @@
     const rolesChecklist    = document.getElementById("rolesChecklist");
 
     /********************************************************************
-     * Funciones Gestor de Roles
+     * Lógica Gestor de Roles
      ********************************************************************/
     function cargarComboPerfilesGestion(){
       const ambito = cmbAmbitoPerfil.value;
@@ -384,7 +414,9 @@
       }
       dataPerfiles[ambito] = listaAmbito;
 
-      alert("Perfil guardado en el ámbito seleccionado (solo demo, no persiste en servidor).");
+      guardarPerfilesEnStorage(); // persiste el cambio
+
+      alert("Perfil guardado en el ámbito seleccionado.");
       cargarComboPerfilesGestion();
       cmbPerfilGestion.value = idNormalizado;
     });
@@ -403,7 +435,10 @@
       if(idx >= 0){
         listaAmbito.splice(idx,1);
         dataPerfiles[ambito] = listaAmbito;
-        alert("Perfil eliminado (demo, solo en memoria).");
+
+        guardarPerfilesEnStorage(); // persiste el cambio
+
+        alert("Perfil eliminado.");
         cargarComboPerfilesGestion();
         txtNombrePerfil.value = "";
         pintarChecklistRoles([]);
@@ -413,13 +448,12 @@
     });
 
     btnVolverPerfil.addEventListener("click", () => {
-      // En esta versión standalone simplemente resetea los campos.
-      txtNombrePerfil.value = "";
-      cargarComboPerfilesGestion();
-      pintarChecklistRoles();
+      // Vuelve a la página principal con los cambios ya persistidos
+      window.location.href = "https://cesarjimenezb-design.github.io/Roles-y-perfiles/";
     });
 
     // Inicialización
+    cargarPerfilesDesdeStorage();
     cargarComboPerfilesGestion();
     pintarChecklistRoles();
   </script>
